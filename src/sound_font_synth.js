@@ -234,6 +234,7 @@ export class Synthesizer {
     }
 
     this.gainMaster.connect(this.ctx.destination);
+    this.input = null;
   }
 
   close () {
@@ -248,6 +249,7 @@ export class Synthesizer {
     this.input = input;
     this.parser = new Parser(input);
     this.bankSet = this.createAllInstruments();
+    this.input = null;
   }
 
   /** @return {Array.<Array.<Object>>} */
