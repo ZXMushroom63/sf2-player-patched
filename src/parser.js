@@ -66,7 +66,7 @@ export class Parser {
    * @param {Uint8Array} input
    * @param {Object=} optParams
    */
-  constructor (input, optParams = {}) {
+  constructor(input, optParams = {}) {
     this.input = input;
     /** @type {(Object|undefined)} */
     this.parserOption = optParams.parserOption || {};
@@ -154,7 +154,7 @@ export class Parser {
     ];
   }
 
-  parse () {
+  parse() {
     const parser = new RiffHelper.Riff(this.input, this.parserOption);
 
     // parse RIFF chunk
@@ -179,7 +179,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parseRiffChunk (chunk) {
+  parseRiffChunk(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -220,7 +220,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {any}
    */
-  parseInfoList (chunk) {
+  parseInfoList(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -248,7 +248,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parseSdtaList (chunk) {
+  parseSdtaList(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -270,19 +270,28 @@ export class Parser {
     const parser = new RiffHelper.Riff(data, { 'index': ip, 'length': chunk.size - 4 });
 
     parser.parse();
-    if (parser.chunkList.length !== 1) {
-      throw new Error('TODO');
+
+    if (parser.chunkList.length === 0) {
+      throw new Error("sdta chunk has no samples");
     }
+
+    const firstChunk = parser.getChunk(0);
+    const totalSize = parser.chunkList.reduce((sum, currentChunk) => sum + currentChunk.size, 0);
+
     this.samplingData =
-      /** @type {{type: string, size: number, offset: number}} */
-      (parser.getChunk(0));
+    /** @type {{type: string, size: number, offset: number}} */
+    {
+      type: firstChunk.type,
+      size: totalSize,
+      offset: firstChunk.offset
+    };
   }
 
   /**
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parsePdtaList (chunk) {
+  parsePdtaList(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -325,7 +334,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parsePhdr (chunk) {
+  parsePhdr(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -359,7 +368,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parsePbag (chunk) {
+  parsePbag(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -387,7 +396,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parsePmod (chunk) {
+  parsePmod(chunk) {
     // check parse target
     if (chunk.type !== 'pmod') {
       throw new Error('invalid chunk type:' + chunk.type);
@@ -400,7 +409,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parsePgen (chunk) {
+  parsePgen(chunk) {
     // check parse target
     if (chunk.type !== 'pgen') {
       throw new Error('invalid chunk type:' + chunk.type);
@@ -412,7 +421,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parseInst (chunk) {
+  parseInst(chunk) {
     const data = this.input;
 
     let ip = chunk.offset;
@@ -439,7 +448,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parseIbag (chunk) {
+  parseIbag(chunk) {
     const data = this.input;
     let ip = chunk.offset;
 
@@ -464,7 +473,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parseImod (chunk) {
+  parseImod(chunk) {
     // check parse target
     if (chunk.type !== 'imod') {
       throw new Error('invalid chunk type:' + chunk.type);
@@ -477,7 +486,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parseIgen (chunk) {
+  parseIgen(chunk) {
     // check parse target
     if (chunk.type !== 'igen') {
       throw new Error('invalid chunk type:' + chunk.type);
@@ -490,7 +499,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @returns {void}
    */
-  parseShdr (chunk) {
+  parseShdr(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -590,7 +599,7 @@ export class Parser {
    * @param {number} sampleRate
    * @return {object}
    */
-  adjustSampleData (sample, sampleRate) {
+  adjustSampleData(sample, sampleRate) {
     /** @type {Int16Array} */
     let newSample;
     /** @type {number} */
@@ -625,7 +634,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @return {Array.<Object>}
    */
-  parseModulator (chunk) {
+  parseModulator(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -660,29 +669,29 @@ export class Parser {
       } else {
         // Amount
         switch (key) {
-        case 'keyRange':
+          case 'keyRange':
           /* FALLTHROUGH */
-        case 'velRange':
+          case 'velRange':
           /* FALLTHROUGH */
-        case 'keynum':
+          case 'keynum':
           /* FALLTHROUGH */
-        case 'velocity':
-          output.push({
-            type: key,
-            value: {
-              lo: data[ip++],
-              hi: data[ip++]
-            }
-          });
-          break;
-        default:
-          output.push({
-            type: key,
-            value: {
-              amount: data[ip++] | (data[ip++] << 8) << 16 >> 16
-            }
-          });
-          break;
+          case 'velocity':
+            output.push({
+              type: key,
+              value: {
+                lo: data[ip++],
+                hi: data[ip++]
+              }
+            });
+            break;
+          default:
+            output.push({
+              type: key,
+              value: {
+                amount: data[ip++] | (data[ip++] << 8) << 16 >> 16
+              }
+            });
+            break;
         }
       }
 
@@ -702,7 +711,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @return {Array.<Object>}
    */
-  parseGenerator (chunk) {
+  parseGenerator(chunk) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -732,29 +741,29 @@ export class Parser {
       }
 
       switch (key) {
-      case 'keynum':
+        case 'keynum':
         /* FALLTHROUGH */
-      case 'keyRange':
+        case 'keyRange':
         /* FALLTHROUGH */
-      case 'velRange':
+        case 'velRange':
         /* FALLTHROUGH */
-      case 'velocity':
-        output.push({
-          type: key,
-          value: {
-            lo: data[ip++],
-            hi: data[ip++]
-          }
-        });
-        break;
-      default:
-        output.push({
-          type: key,
-          value: {
-            amount: data[ip++] | (data[ip++] << 8) << 16 >> 16
-          }
-        });
-        break;
+        case 'velocity':
+          output.push({
+            type: key,
+            value: {
+              lo: data[ip++],
+              hi: data[ip++]
+            }
+          });
+          break;
+        default:
+          output.push({
+            type: key,
+            value: {
+              amount: data[ip++] | (data[ip++] << 8) << 16 >> 16
+            }
+          });
+          break;
       }
     }
 
@@ -764,7 +773,7 @@ export class Parser {
   /**
    * @return {Array.<object>}
    */
-  createInstrument () {
+  createInstrument() {
     /** @type {Array.<Object>} */
     const instrument = this.instrument;
     /** @type {Array.<Object>} */
@@ -821,7 +830,7 @@ export class Parser {
   /**
    * @return {Array.<object>}
    */
-  createPreset () {
+  createPreset() {
     /** @type {Array.<Object>} */
     const preset = this.presetHeader;
     /** @type {Array.<Object>} */
@@ -892,7 +901,7 @@ export class Parser {
    * @return {{generator: Object, generatorInfo: Array.<Object>}}
    * @private
    */
-  createInstrumentGenerator_ (zone, index) {
+  createInstrumentGenerator_(zone, index) {
     const modgen = this.createBagModGen_(
       zone,
       zone[index].instrumentGeneratorIndex,
@@ -912,7 +921,7 @@ export class Parser {
    * @return {{modulator: Object, modulatorInfo: Array.<Object>}}
    * @private
    */
-  createInstrumentModulator_ (zone, index) {
+  createInstrumentModulator_(zone, index) {
     const modgen = this.createBagModGen_(
       zone,
       zone[index].presetModulatorIndex,
@@ -932,7 +941,7 @@ export class Parser {
    * @return {{generator: InstrumentGenerator, generatorInfo: Array.<Object>}}
    * @private
    */
-  createPresetGenerator_ (zone, index) {
+  createPresetGenerator_(zone, index) {
     const modgen = this.createBagModGen_(
       zone,
       zone[index].presetGeneratorIndex,
@@ -952,7 +961,7 @@ export class Parser {
    * @return {{modulator: Object, modulatorInfo: Array.<Object>}}
    * @private
    */
-  createPresetModulator_ (zone, index) {
+  createPresetModulator_(zone, index) {
     /** @type {{modgen: Object, modgenInfo: Array.<Object>}} */
     const modgen = this.createBagModGen_(
       zone,
@@ -975,7 +984,7 @@ export class Parser {
    * @return {{modgen: Object, modgenInfo: Array.<Object>}}
    * @private
    */
-  createBagModGen_ (zone, indexStart, indexEnd, zoneModGen) {
+  createBagModGen_(zone, indexStart, indexEnd, zoneModGen) {
     /** @type {Array.<Object>} */
     const modgenInfo = [];
     /** @type {Object} */
