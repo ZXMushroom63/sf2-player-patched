@@ -113,7 +113,7 @@ globalThis.SoundFont = class SoundFont {
    * @param {ArrayBuffer} arrayBuffer
    * @returns {Promise<void>}
    */
-  async bootSynth (arrayBuffer) {
+  async bootSynth(arrayBuffer) {
     const input = new Uint8Array(arrayBuffer);
 
     if (this.synth) {
