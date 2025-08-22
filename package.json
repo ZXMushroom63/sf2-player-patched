@@ -9,10 +9,10 @@
   },
   "scripts": {
     "server": "http-server ./ -p 8080",
-    "esbuild": "npx esbuild src/index.js --bundle --sourcemap --minify --platform=browser --format=esm --outfile=pkg/index.js",
-    "esbuild:watch": "npx esbuild src/index.js --bundle --platform=browser --format=esm --watch --outfile=pkg/index.js",
+    "esbuild": "npx esbuild src/index.js --bundle --sourcemap --minify --platform=browser --format=iife --outfile=pkg/index.js",
+    "esbuild:watch": "npx esbuild src/index.js --bundle --platform=browser --format=iife --watch --outfile=pkg/index.js",
     "dev": "npx npm-run-all --parallel esbuild:watch server",
-    "build": "rm -rf pkg/ && mkdir pkg && npm run esbuild",
+    "build": "rmdir /S /Q pkg && mkdir pkg && npm run esbuild && move /Y pkg\\index.js ..\\synthetic-audio\\lib\\sf2-player.js",
     "release": "npm version patch && cp package.json ./pkg/package.json && npm publish ./pkg"
   },
   "repository": {

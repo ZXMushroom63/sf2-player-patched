@@ -1,6 +1,5 @@
 /* eslint-disable no-bitwise */
 import Parser from './parser.js';
-import Reverb from './reverb.js';
 import SynthesizerNote from './sound_font_synth_note.js';
 
 /**
@@ -157,18 +156,6 @@ export class Synthesizer {
     }
 
     this.programSet = [];
-
-    /** @type {Array.<Reverb>}リバーブエフェクト（チャンネル毎に用意する） */
-    this.reverb = [];
-
-    /** @type {Array.<BiquadFilterNode>} フィルタ（ビブラートなど） */
-    this.filter = [];
-
-    for (i = 0; i < 16; ++i) {
-      this.reverb[i] = new Reverb(this.ctx, { mix: 0.315 });
-      // フィルタを定義
-      this.filter[i] = this.ctx.createBiquadFilter();
-    }
   }
 
   /**
@@ -238,7 +225,6 @@ export class Synthesizer {
       this.releaseTime(i, 64);
       this.harmonicContent(i, 64);
       this.cutOffFrequency(i, 64);
-      this.reverbDepth(i, 40);
     }
 
     this.setPercussionPart(9, true);
@@ -442,7 +428,6 @@ export class Synthesizer {
         'initialFilterFc': this.getModGenAmount(generator, 'initialFilterFc', 13500),
         'modEnvToFilterFc': this.getModGenAmount(generator, 'modEnvToFilterFc'),
         'initialFilterQ': this.getModGenAmount(generator, 'initialFilterQ'),
-        'reverbEffectSend': this.getModGenAmount(generator, 'reverbEffectSend'),
         'initialAttenuation': this.getModGenAmount(generator, 'initialAttenuation'),
         'freqVibLFO': freqVibLFO ? (2 ** (freqVibLFO / 1200)) * 8.176 : undefined,
         'pan': pan ? pan / 1200 : undefined
@@ -540,7 +525,6 @@ export class Synthesizer {
     instrumentKey.releaseTime = this.channelRelease[channel];
     instrumentKey.cutOffFrequency = this.cutOffFrequency[channel];
     instrumentKey.harmonicContent = this.harmonicContent[channel];
-    instrumentKey.reverb = this.reverb[channel];
 
     // percussion
     if (bankIndex > 125) {
@@ -821,14 +805,6 @@ export class Synthesizer {
     this.channelCutOffFrequency[channel] = value;
   }
 
-  /**
-   * @param {number} channel
-   * @param {number} depth
-   * @returns {void}
-   */
-  reverbDepth (channel, depth) {
-    this.reverb[channel].mix(depth / 127);
-  }
 
   /**
    * @param {number} channel pitch bend sensitivity を取得するチャンネル.

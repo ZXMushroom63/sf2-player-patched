@@ -48,7 +48,7 @@ const waitForReference = ref => new Promise(resolve => {
   }, 16);
 });
 
-export default class SoundFont {
+globalThis.SoundFont = class SoundFont {
   constructor () {
     this.synth = undefined;
     this._channel = 0;

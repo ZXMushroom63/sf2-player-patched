@@ -40,7 +40,6 @@
  * @prop {number} expression
  * @prop {number} cutOffFrequency
  * @prop {number} hermonicContent
- * @prop {import('./reverb.js').default} reverb
  */
 
 /**
@@ -91,9 +90,6 @@ export class SynthesizerNote {
     this.cutOffFrequency = instrument.cutOffFrequency;
     /** @type {number} */
     this.hermonicContent = instrument.hermonicContent;
-
-    /** @type {import('./reverb.js').default} */
-    this.reverb = instrument.reverb;
 
     // state
     /** @type {number} */
@@ -369,7 +365,7 @@ export class SynthesizerNote {
   }
 
   connect () {
-    this.reverb.connect(this.outputGainNode).connect(this.destination);
+    this.outputGainNode.connect(this.destination);
   }
 
   disconnect () {
