@@ -727,9 +727,7 @@ export class Parser {
     while (ip < size) {
       code = data[ip++] | (data[ip++] << 8);
       key = this.GeneratorEnumeratorTable[code];
-      if (key === "initialFilterFc") {
-        console.log(key, data[ip] | (data[ip + 1] << 8) << 16 >> 16);
-      }
+      
       if (key === undefined) {
         output.push({
           type: key,
