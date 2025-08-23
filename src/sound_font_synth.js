@@ -539,6 +539,10 @@ export class Synthesizer {
       }
     }
 
+    if (matchingSampleData.length === 0) {
+      matchingSampleData.push({sample: instrumentKey.sample, pan: instrumentKey.pan || 0});
+    }
+
     if (instrumentKey === null) {
       // TODO
       console.warn(
