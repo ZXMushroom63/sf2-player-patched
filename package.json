@@ -12,7 +12,7 @@
     "esbuild": "npx esbuild src/index.js --bundle --sourcemap --minify --platform=browser --format=iife --outfile=pkg/index.js",
     "esbuild:watch": "npx esbuild src/index.js --bundle --platform=browser --format=iife --watch --outfile=pkg/index.js",
     "dev": "npx npm-run-all --parallel esbuild:watch server",
-    "build": "rmdir /S /Q pkg && mkdir pkg && npm run esbuild && move /Y pkg\\index.js ..\\synthetic-audio\\lib\\sf2-player.js",
+    "build": "rmdir /S /Q pkg && mkdir pkg && npm run esbuild && move /Y pkg\\index.js ..\\synthetic-audio\\lib\\sf2-player.js && move /Y pkg\\index.js.map ..\\synthetic-audio\\lib\\index.js.map",
     "release": "npm version patch && cp package.json ./pkg/package.json && npm publish ./pkg"
   },
   "repository": {

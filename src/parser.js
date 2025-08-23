@@ -492,7 +492,7 @@ export class Parser {
       throw new Error('invalid chunk type:' + chunk.type);
     }
 
-    this.instrumentZoneGenerator = this.parseGenerator(chunk);
+    this.instrumentZoneGenerator = this.parseGenerator(chunk,true);
   }
 
   /**
@@ -711,7 +711,7 @@ export class Parser {
    * @param {RiffHelper.RiffChunk} chunk
    * @return {Array.<Object>}
    */
-  parseGenerator(chunk) {
+  parseGenerator(chunk, dbg) {
     const data = this.input;
     /** @type {number} */
     let ip = chunk.offset;
@@ -727,6 +727,9 @@ export class Parser {
     while (ip < size) {
       code = data[ip++] | (data[ip++] << 8);
       key = this.GeneratorEnumeratorTable[code];
+      if (key === "initialFilterFc") {
+        console.log(key, data[ip] | (data[ip + 1] << 8) << 16 >> 16);
+      }
       if (key === undefined) {
         output.push({
           type: key,

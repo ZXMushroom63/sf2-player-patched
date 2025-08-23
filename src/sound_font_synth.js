@@ -264,74 +264,85 @@ export class Synthesizer {
   /** @return {Array.<Array.<Object>>} */
   createAllInstruments() {
     const { parser } = this;
-
     parser.parse();
 
-    /** @type {Array} TODO */
     const presets = parser.createPreset();
-    /** @type {Array} TODO */
     const instruments = parser.createInstrument();
-    /** @type {Array} */
     const banks = [];
-    let bank = [];
-
-    /** @type {number} */
-    let bankNumber;
-    /** @type {Object} TODO */
-    let preset;
-    /** @type {Object} */
-    let instrument;
-    /** @type {number} */
-    let presetNumber;
-    /** @type {number} */
-    let i;
-    /** @type {number} */
-    let il;
-    /** @type {number} */
-    let j;
-    /** @type {number} */
-    let jl;
-    /** @type {string} */
-    let presetName;
-
     const programSet = [];
 
-    for (i = 0, il = presets.length; i < il; ++i) {
-      preset = presets[i];
-      presetNumber = preset.header.preset;
-      bankNumber = preset.header.bank;
-      presetName = preset.name.replace(/\0*$/, '');
+    for (let i = 0; i < presets.length; ++i) {
+      const preset = presets[i];
+      const presetNumber = preset.header.preset;
+      const bankNumber = preset.header.bank;
+      const presetName = preset.name.replace(/\0*$/, '');
 
-      if (typeof preset.instrument !== 'number') {
-        continue;
+      let globalInstrumentGenerator = {};
+      let globalPresetGenerator = {};
+
+      const globalPresetZone = preset.info[0];
+      globalPresetGenerator = globalPresetZone.generator || {};
+
+      const globalInstrumentId = (globalPresetGenerator.instrument) ? globalPresetGenerator.instrument.amount : null;
+      if (globalInstrumentId !== null) {
+        const globalInstrument = instruments[globalInstrumentId];
+        if (globalInstrument && globalInstrument.info && globalInstrument.info.length > 0) {
+
+          globalInstrumentGenerator = globalInstrument.info[0].generator || {};
+        }
       }
 
-      instrument = instruments[preset.instrument];
-      if (instrument.name.replace(/\0*$/, '') === 'EOI') {
-        continue;
-      }
+      const baseGenerator = {
+        ...globalInstrumentGenerator,
+        ...globalPresetGenerator
+      };
 
-      // select bank
       if (banks[bankNumber] === undefined) {
         banks[bankNumber] = [];
       }
+      const bank = banks[bankNumber];
 
-      bank = banks[bankNumber];
+      for (let j = 1; j < preset.info.length; j++) {
+        const specificPresetZone = preset.info[j];
+        const specificPresetGenerator = specificPresetZone.generator || {};
 
-      bank[presetNumber] = {};
-      bank[presetNumber].name = presetName;
+        const specificInstrumentId = (specificPresetGenerator.instrument) ? specificPresetGenerator.instrument.amount : null;
 
-      for (j = 0, jl = instrument.info.length; j < jl; ++j) {
-        this.createNoteInfo(parser, instrument.info[j], bank[presetNumber]);
+        if (specificInstrumentId !== null) {
+          const specificInstrument = instruments[specificInstrumentId];
+          if (specificInstrument && specificInstrument.info) {
+            for (const specificInstrumentZone of specificInstrument.info) {
+              const specificInstrumentGenerator = specificInstrumentZone.generator || {};
+
+              const finalGenerator = {
+                ...baseGenerator,
+                ...globalPresetGenerator,
+                ...globalInstrumentGenerator,
+                ...specificInstrument.info[0].generator,
+                ...specificPresetGenerator,
+                ...specificInstrumentGenerator,
+              };
+
+              if (finalGenerator.keyRange) {
+                if (!bank[presetNumber]) {
+                  bank[presetNumber] = {};
+                  bank[presetNumber].name = presetName;
+                }
+                
+                this.createNoteInfo(parser, { generator: finalGenerator }, bank[presetNumber]);
+              }
+            }
+          }
+        }
       }
+
       if (!programSet[bankNumber]) {
         programSet[bankNumber] = {};
       }
-      programSet[bankNumber][presetNumber] = presetName;
+      programSet[bankNumber][presetNumber] ||= presetName;
     }
 
     this.programSet = programSet;
-
     return banks;
   }
 
@@ -343,7 +354,7 @@ export class Synthesizer {
    */
   createNoteInfo(parser, info, preset) {
     const generator = info.generator;
-
+    
     if (generator.keyRange === undefined || generator.sampleID === undefined) {
       return;
     }
@@ -381,16 +392,19 @@ export class Synthesizer {
     /** @type {number} */
     const tune = this.getModGenAmount(generator, 'coarseTune') + this.getModGenAmount(generator, 'fineTune') / 100;
 
+    const velRange = generator.velRange || { doNotPrefer: true, lo: 0, hi: 127 };
+
     for (let i = generator.keyRange.lo, il = generator.keyRange.hi; i <= il; ++i) {
-      if (preset[i]) {
-        continue;
+      if (!preset[i]) {
+        preset[i] = [];
       }
       /** @type {number} */
       const sampleId = this.getModGenAmount(generator, 'sampleID');
       /** @type {object} */
       const sampleHeader = parser.sampleHeader[sampleId];
 
-      preset[i] = {
+      preset[i].push({
+        'velRange': velRange,
         'sample': parser.sample[sampleId],
         'sampleRate': sampleHeader.sampleRate,
         'sampleModes': this.getModGenAmount(generator, 'sampleModes'),
@@ -442,7 +456,7 @@ export class Synthesizer {
         'initialAttenuation': this.getModGenAmount(generator, 'initialAttenuation'),
         'freqVibLFO': freqVibLFO ? (2 ** (freqVibLFO / 1200)) * 8.176 : undefined,
         'pan': pan ? pan / 1200 : undefined
-      };
+      });
     }
   }
 
@@ -504,20 +518,36 @@ export class Synthesizer {
       instrument = this.bankSet[0][this.channelInstrument[channel]];
     }
 
-    if (instrument[key] === undefined) {
+    const instrumentLayers = instrument[key];
+    let instrumentKey = null;
+
+    if (instrumentLayers) {
+      for (let i = 0, il = instrumentLayers.length; i < il; ++i) {
+        const layer = instrumentLayers[i];
+        if (velocity >= layer.velRange.lo && velocity <= layer.velRange.hi) {
+          instrumentKey = layer;
+          if (!layer.velRange.doNotPrefer) {
+            console.log(layer.sample[0], velocity, key);
+            break;
+          }
+        }
+      }
+    }
+
+    if (instrumentKey === null) {
       // TODO
       console.warn(
-        'instrument not found: bank=%s instrument=%s channel=%s key=%s',
+        'instrument not found: bank=%s instrument=%s channel=%s key=%s velocity=%s',
         bankIndex,
         this.channelInstrument[channel],
         channel,
-        key
+        key,
+        velocity
       );
 
       return;
     }
-    /** @type {Object} */
-    const instrumentKey = instrument[key];
+
     /** @type {number} */
     let panpot = this.channelPanpot[channel] === 0 ? (Math.random() * 127) | 0 : this.channelPanpot[channel] - 64;
 
