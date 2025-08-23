@@ -328,7 +328,7 @@ export class Synthesizer {
                   bank[presetNumber] = {};
                   bank[presetNumber].name = presetName;
                 }
-                
+
                 this.createNoteInfo(parser, { generator: finalGenerator }, bank[presetNumber]);
               }
             }
@@ -354,7 +354,7 @@ export class Synthesizer {
    */
   createNoteInfo(parser, info, preset) {
     const generator = info.generator;
-    
+
     if (generator.keyRange === undefined || generator.sampleID === undefined) {
       return;
     }
@@ -521,14 +521,19 @@ export class Synthesizer {
     const instrumentLayers = instrument[key];
     let instrumentKey = null;
 
+    const matchingSampleData = [];
+
     if (instrumentLayers) {
       for (let i = 0, il = instrumentLayers.length; i < il; ++i) {
         const layer = instrumentLayers[i];
         if (velocity >= layer.velRange.lo && velocity <= layer.velRange.hi) {
           instrumentKey = layer;
+
           if (!layer.velRange.doNotPrefer) {
-            console.log(layer.sample[0], velocity, key);
-            break;
+            matchingSampleData.push({ sample: layer.sample, pan: layer.pan });
+            if (simulatedChannel === -1) {
+              break;
+            }
           }
         }
       }
@@ -546,6 +551,23 @@ export class Synthesizer {
       );
 
       return;
+    }
+
+    const finalSample = (simulatedChannel === -1) ? null : new Float32Array(matchingSampleData[0].sample.length);
+
+    if (simulatedChannel !== -1) {
+      const temp = new Float32Array(matchingSampleData[0].sample.length);
+
+      matchingSampleData.forEach(sampleData => {
+        temp.set(sampleData.sample);
+
+        const y = (sampleData.pan + 1) / 2;
+        const gain = (simulatedChannel === 0) ? Math.cos(y * Math.PI / 2) : Math.sin(y * Math.PI / 2);
+
+        for (let i = 0; i < temp.length; i++) {
+          finalSample[i] += temp[i] * gain;
+        }
+      });
     }
 
     /** @type {number} */
@@ -585,7 +607,7 @@ export class Synthesizer {
 
     // note on
     /** @type {SynthesizerNote} */
-    const note = new SynthesizerNote(this.ctx, this.gainMaster, instrumentKey, simulatedChannel || 0);
+    const note = new SynthesizerNote(this.ctx, this.gainMaster, instrumentKey, finalSample);
 
     note.noteOn();
     this.currentNoteOn[channel].push(note);

@@ -134,8 +134,8 @@ globalThis.SoundFont = class SoundFont {
    * @param {number} channel
    * @returns {void}
    */
-  noteOn (midiNumber, velocity = 127, channel, simulateChannel) {
-    this.synth.noteOn(channel ? channel : this._channel, midiNumber, velocity, simulateChannel || 0);
+  noteOn (midiNumber, velocity = 127, channel, simulatedChannel) {
+    this.synth.noteOn(channel ? channel : this._channel, midiNumber, velocity, simulatedChannel ?? -1);
   }
 
   /**

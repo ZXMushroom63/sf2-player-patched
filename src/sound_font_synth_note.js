@@ -52,9 +52,9 @@ export class SynthesizerNote {
    * @param {AudioNode} destination
    * @param {Instrument} instrument
    */
-  constructor (ctx, destination, instrument, simulateChannel) {
-    /** @type {number} */
-    this.simulateChannel = simulateChannel;
+  constructor (ctx, destination, instrument, customBuffer) {
+    /** @type {Uint8Array} */
+    this.customBuffer = customBuffer;
     /** @type {AudioContext} */
     this.ctx = ctx;
     /** @type {AudioNode} */
@@ -66,8 +66,8 @@ export class SynthesizerNote {
     this.key = instrument.key;
     /** @type {number} */
     this.velocity = instrument.velocity;
-    /** @type {Uint8Array} */
-    this.buffer = instrument.sample;
+    /** @type {Uint8Array|Float32Array} */
+    this.buffer = customBuffer || instrument.sample;
     /** @type {number} */
     this.playbackRate = instrument.basePlaybackRate;
     /** @type {number} */
@@ -151,7 +151,7 @@ export class SynthesizerNote {
     const startTime = instrument.start / this.sampleRate;
     // TODO: ドラムパートのPanが変化した場合、その計算をしなければならない
     // http://cpansearch.perl.org/src/PJB/MIDI-SoundFont-1.08/doc/sfspec21.html#8.4.6
-    const pan = (instrument.pan !== undefined ? instrument.pan : this.panpot) * panFactor;
+    const pan = instrument.pan !== undefined ? instrument.pan : this.panpot;
 
     const sample = this.buffer.subarray(0, this.buffer.length + instrument.end);
 
