@@ -52,7 +52,9 @@ export class SynthesizerNote {
    * @param {AudioNode} destination
    * @param {Instrument} instrument
    */
-  constructor (ctx, destination, instrument) {
+  constructor (ctx, destination, instrument, simulateChannel) {
+    /** @type {number} */
+    this.simulateChannel = simulateChannel;
     /** @type {AudioContext} */
     this.ctx = ctx;
     /** @type {AudioNode} */
@@ -107,8 +109,6 @@ export class SynthesizerNote {
     this.audioBuffer = null;
     /** @type {AudioBufferSourceNode} */
     this.bufferSource = ctx.createBufferSource();
-    /** @type {PannerNode} */
-    this.panner = ctx.createPanner();
     /** @type {GainNode} */
     this.outputGainNode = ctx.createGain();
     /** @type {GainNode} */
@@ -151,7 +151,7 @@ export class SynthesizerNote {
     const startTime = instrument.start / this.sampleRate;
     // TODO: ドラムパートのPanが変化した場合、その計算をしなければならない
     // http://cpansearch.perl.org/src/PJB/MIDI-SoundFont-1.08/doc/sfspec21.html#8.4.6
-    const pan = instrument.pan !== undefined ? instrument.pan : this.panpot;
+    const pan = (instrument.pan !== undefined ? instrument.pan : this.panpot) * panFactor;
 
     const sample = this.buffer.subarray(0, this.buffer.length + instrument.end);
 
@@ -183,16 +183,7 @@ export class SynthesizerNote {
     this.expressionGainNode.gain.value = this.expression / 127;
 
     // panpot
-    /** @type {PannerNode} */
-    const panner = this.panner;
-
-    panner.panningModel = 'equalpower';
-    // panner.distanceModel = 'inverse';
-    panner.setPosition(
-      Math.sin(pan * Math.PI / 2),
-      0,
-      Math.cos(pan * Math.PI / 2)
-    );
+    // panning stuff
 
     // ---------------------------------------------------------------------------
     // Delay, Attack, Hold, Decay, Sustain
@@ -237,8 +228,7 @@ export class SynthesizerNote {
 
     // connect
     bufferSource.connect(modulator);
-    modulator.connect(panner);
-    panner.connect(this.expressionGainNode);
+    modulator.connect(this.expressionGainNode);
 
     this.expressionGainNode.connect(output);
 

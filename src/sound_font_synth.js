@@ -500,7 +500,7 @@ export class Synthesizer {
    * @param {number} velocity
    * @returns {void}
    */
-  noteOn(channel, key, velocity) {
+  noteOn(channel, key, velocity, simulatedChannel) {
     const bankIndex = this.channelBank[channel];
     /** @type {Object} */
     const bank = (typeof this.bankSet[bankIndex] === 'object') ? this.bankSet[bankIndex] : this.bankSet[0];
@@ -585,7 +585,7 @@ export class Synthesizer {
 
     // note on
     /** @type {SynthesizerNote} */
-    const note = new SynthesizerNote(this.ctx, this.gainMaster, instrumentKey);
+    const note = new SynthesizerNote(this.ctx, this.gainMaster, instrumentKey, simulatedChannel || 0);
 
     note.noteOn();
     this.currentNoteOn[channel].push(note);
