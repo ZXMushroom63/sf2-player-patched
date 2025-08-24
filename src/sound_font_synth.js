@@ -518,25 +518,31 @@ export class Synthesizer {
       instrument = this.bankSet[0][this.channelInstrument[channel]];
     }
 
-    const instrumentNoteKeys = Object.keys(instrument).map(parseInt).sort((a, b) => { Math.abs(a - key) - Math.abs(b - key) });
+    const instrumentNoteKeys = Object.keys(instrument).map(x=>parseInt(x)).sort((a, b) => Math.abs(a - key) - Math.abs(b - key));
     const instrumentLayers = instrument[key] || instrument[instrumentNoteKeys[0]];
+
     let instrumentKey = null;
 
     const matchingSampleData = [];
 
     if (instrumentLayers) {
+      instrumentLayers.sort((a, b)=>(Math.abs((a.velRange?.lo + a.velRange?.hi) / 2) - velocity) - Math.abs(((b.velRange?.lo + b.velRange?.hi) / 2) - velocity));
+
       for (let i = 0, il = instrumentLayers.length; i < il; ++i) {
         const layer = instrumentLayers[i];
         if (velocity >= layer.velRange.lo && velocity <= layer.velRange.hi) {
           instrumentKey = layer;
 
           if (!layer.velRange.doNotPrefer) {
-            matchingSampleData.push({ sample: layer.sample, pan: layer.pan });
+            matchingSampleData.push({ sample: layer.sample, pan: layer.pan || 0 });
             if (simulatedChannel === -1) {
               break;
             }
           }
         }
+      }
+      if (!instrumentKey) {
+        instrumentKey = instrumentLayers[0];
       }
     }
 
