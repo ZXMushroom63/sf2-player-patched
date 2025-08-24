@@ -564,10 +564,10 @@ export class Synthesizer {
       return;
     }
 
-    const finalSample = (simulatedChannel === -1) ? null : new Float32Array(matchingSampleData[0].sample.length);
+    const finalSample = (simulatedChannel === -1) ? null : new Float32Array(Math.max(...matchingSampleData.map(x => x.sample.length)));
 
     if (simulatedChannel !== -1) {
-      const temp = new Float32Array(matchingSampleData[0].sample.length);
+      const temp = new Float32Array(finalSample.length);
 
       matchingSampleData.forEach(sampleData => {
         temp.set(sampleData.sample);
