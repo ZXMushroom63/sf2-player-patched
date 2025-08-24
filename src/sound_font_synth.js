@@ -302,7 +302,7 @@ export class Synthesizer {
       }
       const bank = banks[bankNumber];
 
-      for (let j = 1; j < preset.info.length; j++) {
+      for (let j = Math.max(Math.min(1, preset.info.length - 1), 0); j < preset.info.length; j++) {
         const specificPresetZone = preset.info[j];
         const specificPresetGenerator = specificPresetZone.generator || {};
 
