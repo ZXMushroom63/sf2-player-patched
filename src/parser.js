@@ -492,7 +492,7 @@ export class Parser {
       throw new Error('invalid chunk type:' + chunk.type);
     }
 
-    this.instrumentZoneGenerator = this.parseGenerator(chunk,true);
+    this.instrumentZoneGenerator = this.parseGenerator(chunk, true);
   }
 
   /**
@@ -595,37 +595,30 @@ export class Parser {
   }
 
   /**
-   * @param {Int16Array} sample
-   * @param {number} sampleRate
-   * @return {object}
-   */
+  * @param {Int16Array} sample
+  * @param {number} sampleRate
+  * @return {object}
+  */
   adjustSampleData(sample, sampleRate) {
-    /** @type {Int16Array} */
-    let newSample;
-    /** @type {number} */
-    let i;
-    /** @type {number} */
-    let il;
-    /** @type {number} */
-    let j;
-    /** @type {number} */
-    let multiply = 1;
+    if (this.sampleRate <= sampleRate) {
+      return { sample, multiply: 1 };
+    }
 
-    // buffer
-    while (sampleRate < (this.sampleRate)) {
-      newSample = new Int16Array(sample.length * 2);
-      // eslint-disable-next-line no-multi-assign
-      for (i = j = 0, il = sample.length; i < il; ++i) {
-        newSample[j++] = sample[i];
-        newSample[j++] = sample[i];
-      }
-      sample = newSample;
-      multiply *= 2;
-      sampleRate *= 2;
+    const ratio = this.sampleRate / sampleRate;
+    const k = Math.ceil(Math.log2(ratio));
+
+    const multiply = 2 ** k;
+
+    const newSize = sample.length * multiply;
+    const newSample = new Int16Array(newSize);
+    const originalLength = sample.length;
+
+    for (let i = 0; i < originalLength; ++i) {
+      newSample.fill(sample[i], i * multiply, (i + 1) * multiply);
     }
 
     return {
-      sample: sample,
+      sample: newSample,
       multiply: multiply
     };
   }
@@ -727,7 +720,7 @@ export class Parser {
     while (ip < size) {
       code = data[ip++] | (data[ip++] << 8);
       key = this.GeneratorEnumeratorTable[code];
-      
+
       if (key === undefined) {
         output.push({
           type: key,
