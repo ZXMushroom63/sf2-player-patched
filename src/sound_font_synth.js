@@ -518,7 +518,8 @@ export class Synthesizer {
       instrument = this.bankSet[0][this.channelInstrument[channel]];
     }
 
-    const instrumentLayers = instrument[key];
+    const instrumentNoteKeys = Object.keys(instrument).map(parseInt).sort((a, b) => { Math.abs(a - key) - Math.abs(b - key) });
+    const instrumentLayers = instrument[key] || instrument[instrumentNoteKeys[0]];
     let instrumentKey = null;
 
     const matchingSampleData = [];
@@ -540,7 +541,7 @@ export class Synthesizer {
     }
 
     if (matchingSampleData.length === 0) {
-      matchingSampleData.push({sample: instrumentKey.sample, pan: instrumentKey.pan || 0});
+      matchingSampleData.push({ sample: instrumentKey.sample, pan: instrumentKey.pan || 0 });
     }
 
     if (instrumentKey === null) {
